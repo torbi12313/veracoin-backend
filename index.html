@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VERACOIN</title>
+
+<style>
+body{
+    font-family: Arial;
+    background:#0f172a;
+    color:white;
+    text-align:center;
+    padding:40px;
+}
+
+.card{
+    background:#1e293b;
+    padding:30px;
+    border-radius:15px;
+    max-width:400px;
+    margin:auto;
+    margin-top:20px;
+}
+
+input{
+    width:100%;
+    padding:10px;
+    margin:10px 0;
+    border-radius:8px;
+    border:none;
+}
+
+button{
+    width:100%;
+    padding:10px;
+    border:none;
+    border-radius:8px;
+    background:#22c55e;
+    color:white;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+.balance{
+    font-size:30px;
+    margin:20px 0;
+}
+
+.hidden{
+    display:none;
+}
+</style>
+</head>
+<body>
+
+<h1>VERACOIN</h1>
+
+<!-- AUTH -->
+<div id="auth" class="card">
+    <h3>Registro</h3>
+    <input id="regUser" placeholder="Usuario">
+    <input id="regPass" type="password" placeholder="Password">
+    <button onclick="register()">Crear cuenta</button>
+
+    <hr style="margin:20px 0">
+
+    <h3>Login</h3>
+    <input id="logUser" placeholder="Usuario">
+    <input id="logPass" type="password" placeholder="Password">
+    <button onclick="login()">Ingresar</button>
+
+    <p id="msg"></p>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard" class="card hidden">
+    <h3>Tu Cuenta</h3>
+    <div class="balance" id="balance">$ 0</div>
+    <button onclick="aplicarRendimiento()">Aplicar rendimiento diario (2%)</button>
+    <br><br>
+    <button onclick="logout()" style="background:#ef4444;">Cerrar sesión</button>
+</div>
+
+<script>
+
+const API = "https://veracoin-backend.onrender.com";
+
+let token = localStorage.getItem("token");
+
+if(token){
+    mostrarDashboard();
+}
+
+async function register(){
+    const username = document.getElementById("regUser").value;
+    const password = document.getElementById("regPass").value;
+
+    const res = await fetch(API + "/register",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({username,password})
+    });
+
+    const data = await res.json();
+    document.getElementById("msg").innerText = data.message;
+}
+
+async function login(){
+    const username = document.getElementById("logUser").value;
+    const password = document.getElementById("logPass").value;
+
+    const res = await fetch(API + "/login",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({username,password})
+    });
+
+    const data = await res.json();
+
+    if(data.token){
+        localStorage.setItem("token", data.token);
+        token = data.token;
+        mostrarDashboard();
+    }else{
+        document.getElementById("msg").innerText = data.message;
+    }
+}
+
+async function obtenerBalance(){
+    const res = await fetch(API + "/balance",{
+        headers:{
+            "Authorization": token
+        }
+    });
+
+    const data = await res.json();
+    document.getElementById("balance").innerText =
+        "$ " + data.balance.toFixed(2);
+}
+
+async function aplicarRendimiento(){
+    const res = await fetch(API + "/yield",{
+        method:"POST",
+        headers:{
+            "Authorization": token
+        }
+    });
+
+    const data = await res.json();
+    alert(JSON.stringify(data));
+    obtenerBalance();
+}
+
+function mostrarDashboard(){
+    document.getElementById("auth").classList.add("hidden");
+    document.getElementById("dashboard").classList.remove("hidden");
+    obtenerBalance();
+}
+
+function logout(){
+    localStorage.removeItem("token");
+    location.reload();
+}
+
+</script>
+
+</body>
+</html>
